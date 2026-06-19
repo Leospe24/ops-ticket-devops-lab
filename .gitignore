@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+frontend/dist/
+
+# Coverage reports
+coverage/
+backend/coverage/
+
+# Local backups
+backups/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+.tmp/
+tmp/
+temp/
+
+# Kimchi/exploration artifacts (keep docs if needed, exclude transient)
+.kimchi/
+.kimchi/docs/*.md
