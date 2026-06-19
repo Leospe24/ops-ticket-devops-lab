@@ -25,14 +25,24 @@ function buildHeaders(contentType = true) {
 }
 
 async function handleResponse(response) {
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(data.error || `HTTP ${response.status}`);
-    error.status = response.status;
-    error.data = data;
-    throw error;
+  try {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const errorMessage = data.error || `Request failed with status ${response.status}`;
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+    return data;
+  } catch (err) {
+    if (err instanceof TypeError && err.message.includes('fetch')) {
+      const error = new Error('Unable to connect to the API server. Please check your network connection.');
+      error.status = 0;
+      throw error;
+    }
+    throw err;
   }
-  return data;
 }
 
 export const api = {

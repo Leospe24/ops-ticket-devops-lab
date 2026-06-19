@@ -51,26 +51,6 @@ router.get('/', async (req, res, next) => {
 });
 
 /**
- * Generate a progressive ticket ID like INC-101, INC-102, etc.
- */
-async function generateTicketId(trx) {
-  const knex = trx || db;
-  const lastTicket = await knex('tickets')
-    .whereLike('id', 'INC-%')
-    .orderByRaw("CAST(SUBSTRING(id FROM 5) AS INTEGER) DESC")
-    .first();
-
-  let nextNum = 101;
-  if (lastTicket) {
-    const match = lastTicket.id.match(/INC-(\d+)/);
-    if (match) {
-      nextNum = parseInt(match[1], 10) + 1;
-    }
-  }
-  return `INC-${nextNum}`;
-}
-
-/**
  * POST /api/tickets
  * Body: { title, description, priority, status?, assignee_id? }
  */
@@ -99,11 +79,8 @@ router.post('/', async (req, res, next) => {
       }
     }
 
-    const ticketId = await generateTicketId();
-
     const [ticket] = await db('tickets')
       .insert({
-        id: ticketId,
         title,
         description,
         priority,

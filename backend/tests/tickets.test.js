@@ -57,7 +57,7 @@ describe('Ticket Endpoints', () => {
   });
 
   describe('POST /api/tickets', () => {
-    it('creates a ticket with a progressive ID', async () => {
+    it('creates a ticket with auto-generated ID', async () => {
       const ticket = await createTicket(userAToken, {
         title: 'First Ticket',
         description: 'Something is broken',
@@ -65,20 +65,12 @@ describe('Ticket Endpoints', () => {
       });
 
       expect(ticket).toBeDefined();
-      expect(ticket.id).toMatch(/^INC-\d+$/);
+      expect(typeof ticket.id).toBe('number');
+      expect(ticket.id).toBeGreaterThan(0);
       expect(ticket.title).toBe('First Ticket');
       expect(ticket.priority).toBe('high');
       expect(ticket.status).toBe('open');
       expect(ticket.creator_id).toBe(userA.id);
-    });
-
-    it('generates incrementing IDs', async () => {
-      const t1 = await createTicket(userAToken, { title: 'T1', description: 'D1', priority: 'low' });
-      const t2 = await createTicket(userAToken, { title: 'T2', description: 'D2', priority: 'low' });
-
-      const num1 = parseInt(t1.id.split('-')[1], 10);
-      const num2 = parseInt(t2.id.split('-')[1], 10);
-      expect(num2).toBe(num1 + 1);
     });
 
     it('rejects missing fields', async () => {
@@ -225,7 +217,7 @@ describe('Ticket Endpoints', () => {
 
     it('returns 404 for non-existent ticket', async () => {
       const res = await request(app)
-        .put('/api/tickets/INC-99999')
+        .put('/api/tickets/99999')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ status: 'resolved' });
 

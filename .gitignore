@@ -44,3 +44,11 @@ temp/
 # Kimchi/exploration artifacts (keep docs if needed, exclude transient)
 .kimchi/
 .kimchi/docs/*.md
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json

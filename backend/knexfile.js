@@ -1,13 +1,5 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
-// Validate required environment variables
-const required = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
-for (const key of required) {
-  if (!process.env[key]) {
-    throw new Error(`${key} environment variable is required`);
-  }
-}
-
 const baseConfig = {
   client: 'postgresql',
   connection: {
@@ -30,6 +22,34 @@ const baseConfig = {
   },
 };
 
+const productionConfig = {
+  ...baseConfig,
+  connection: {
+    ...baseConfig.connection,
+  },
+};
+
+// Validate production environment variables
+if (process.env.NODE_ENV === 'production') {
+  const required = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
+  for (const key of required) {
+    if (!process.env[key]) {
+      throw new Error(`${key} environment variable is required`);
+    }
+  }
+
+  // Configure SSL
+  if (process.env.DB_SSL === 'true') {
+    const sslConfig = { rejectUnauthorized: true };
+    if (process.env.DB_SSL_CA) {
+      sslConfig.ca = process.env.DB_SSL_CA;
+    }
+    productionConfig.connection.ssl = sslConfig;
+  } else {
+    productionConfig.connection.ssl = false;
+  }
+}
+
 module.exports = {
   development: baseConfig,
   test: {
@@ -39,11 +59,5 @@ module.exports = {
       database: process.env.DB_NAME_TEST || 'opsticket_test',
     },
   },
-  production: {
-    ...baseConfig,
-    connection: {
-      ...baseConfig.connection,
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-    },
-  },
+  production: productionConfig,
 };

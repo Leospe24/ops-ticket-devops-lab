@@ -3,6 +3,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
+const db = require('./db');
 const authRoutes = require('./routes/auth');
 const ticketRoutes = require('./routes/tickets');
 
@@ -32,8 +33,13 @@ if (process.env.NODE_ENV !== 'test') {
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
+app.get('/health', async (_req, res) => {
+  try {
+    await db.raw('SELECT 1');
+    res.json({ status: 'UP', database: 'CONNECTED' });
+  } catch (err) {
+    res.status(503).json({ status: 'DOWN', reason: 'Database unreachable' });
+  }
 });
 
 // 404 fallback
