@@ -52,3 +52,6 @@ temp/
 *.tfstate.*
 *.tfvars
 *.tfvars.json
+
+# Audit — project discovery documentation for cloud migration planning
+audit.md
