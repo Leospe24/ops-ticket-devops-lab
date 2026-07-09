@@ -17,7 +17,7 @@ resource "aws_db_subnet_group" "rds" {
 resource "aws_db_parameter_group" "postgres" {
   name   = "opsticket-postgres-pg"
   family = "postgres16" # Matches our engine version
-  
+
   description = "Custom database parameter group for OpsTicket PostgreSQL"
 
   tags = {
@@ -29,13 +29,13 @@ resource "aws_db_parameter_group" "postgres" {
 # 3. ADVANCED COST-OPTIMIZED DATABASE INSTANCE
 # ==============================================================================
 resource "aws_db_instance" "database" {
-  identifier           = "opsticket-db-instance"
-  allocated_storage     = 20       # Minimum baseline storage to avoid heavy EBS fees
-  max_allocated_storage = 30       # Allows minimal autoscale headroom, stops runaways
-  storage_type         = "gp3"      # gp3 is cheaper and more performant than gp2 baseline
-  engine               = "postgres"
-  engine_version       = "16.1"
-  instance_class       = "db.t4g.micro" # Graviton4 powered micro instance (Highest performance-per-penny)
+  identifier            = "opsticket-db-instance"
+  allocated_storage     = 20    # Minimum baseline storage to avoid heavy EBS fees
+  max_allocated_storage = 30    # Allows minimal autoscale headroom, stops runaways
+  storage_type          = "gp3" # gp3 is cheaper and more performant than gp2 baseline
+  engine                = "postgres"
+  engine_version        = "16.1"
+  instance_class        = "db.t4g.micro" # Graviton4 powered micro instance (Highest performance-per-penny)
 
   # Database Credentials (Note: In a true pipeline, these would be passed via variables)
   db_name  = "opsticket"
@@ -51,9 +51,9 @@ resource "aws_db_instance" "database" {
   # ============================================================================
   # CRITICAL COST CONTROL & DESTRUCTION SAFETIES
   # ============================================================================
-  multi_az               = false # Skips standard duplicate standby charges ($$$ saved)
-  skip_final_snapshot    = true  # Stops AWS from charging you storage fees for a snapshot when you run "destroy"
-  deletion_protection    = false # Allows your GitHub automated pipeline to cleanly destroy the database without error
+  multi_az            = false # Skips standard duplicate standby charges ($$$ saved)
+  skip_final_snapshot = true  # Stops AWS from charging you storage fees for a snapshot when you run "destroy"
+  deletion_protection = false # Allows your GitHub automated pipeline to cleanly destroy the database without error
 
   tags = {
     Name = "opsticket-db"
