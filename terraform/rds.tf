@@ -34,7 +34,7 @@ resource "aws_db_instance" "database" {
   max_allocated_storage = 30    # Allows minimal autoscale headroom, stops runaways
   storage_type          = "gp3" # gp3 is cheaper and more performant than gp2 baseline
   engine                = "postgres"
-  engine_version        = "16.1"
+  engine_version        = "16"
   instance_class        = "db.t4g.micro" # Graviton4 powered micro instance (Highest performance-per-penny)
 
   # Database Credentials (Note: In a true pipeline, these would be passed via variables)
