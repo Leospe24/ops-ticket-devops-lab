@@ -55,3 +55,7 @@ temp/
 
 # Audit — project discovery documentation for cloud migration planning
 audit.md
+
+# Local documentation and visual blueprints
+docs/
+*.drawio

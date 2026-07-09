@@ -1,0 +1,211 @@
+# ==============================================================================
+# 1. CORE ECS CLUSTER
+# ==============================================================================
+resource "aws_ecs_cluster" "main" {
+  name = "opsticket-ecs-cluster"
+
+  tags = {
+    Name = "opsticket-ecs-cluster"
+  }
+}
+
+# ==============================================================================
+# 2. APPLICATION LOAD BALANCER STACK (Public Tier)
+# ==============================================================================
+resource "aws_lb" "main" {
+  name               = "opsticket-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = [aws_subnet.public_1.id, aws_subnet.public_2.id] # High availability front door
+
+  tags = {
+    Name = "opsticket-alb"
+  }
+}
+
+# Target Group 1: Frontend Routing Target
+resource "aws_lb_target_group" "frontend" {
+  name        = "opsticket-tg-frontend"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip" # Required for ECS Fargate awsvpc network mode
+
+  health_check {
+    path                = "/"
+    healthy_threshold   = 3
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+    matcher             = "200"
+  }
+}
+
+# Target Group 2: Backend API Routing Target
+resource "aws_lb_target_group" "backend" {
+  name        = "opsticket-tg-backend"
+  port        = 5000 # Standard backend API service port
+  protocol    = "HTTP"
+  vpc_id      = aws_vpc.main.id
+  target_type = "ip"
+
+  health_check {
+    path                = "/api/health" # standard app health endpoint
+    healthy_threshold   = 2
+    unhealthy_threshold = 5
+    timeout             = 5
+    interval            = 30
+    matcher             = "200"
+  }
+}
+
+# Main Entry Listener (Port 80 HTTP Entrypoint)
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  # Default Action: Send all standard root traffic to the Frontend container
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.frontend.arn
+  }
+}
+
+# Advanced Traffic Routing Rule: Intercept "/api/*" patterns and route them to Backend
+resource "aws_lb_listener_rule" "api_routing" {
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.backend.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/api/*"]
+    }
+  }
+}
+
+# ==============================================================================
+# 3. IAM ROLE DEFINITIONS FOR ECS CONTAINER RUNTIMES
+# ==============================================================================
+# Execution Role: Allows ECS to pull images from ECR and stream logs to CloudWatch
+resource "aws_iam_role" "ecs_execution" {
+  name = "opsticket-ecs-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_execution" {
+  role       = aws_iam_role.ecs_execution.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# ==============================================================================
+# 4. TASK DEFINITIONS (The Container Blueprints)
+# ==============================================================================
+# Frontend Blueprint
+resource "aws_ecs_task_definition" "frontend" {
+  family                   = "opsticket-frontend"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256" # Minimal 0.25 vCPU
+  memory                   = "512" # Minimal 512MB RAM
+  execution_role_arn       = aws_iam_role.ecs_execution.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "frontend"
+      image     = "nginx:alpine" # Temporary placeholder image until Phase 4 pipeline builds our real image
+      essential = true
+      portMappings = [
+        {
+          containerPort = 80
+          hostPort      = 80
+        }
+      ]
+    }
+  ])
+}
+
+# Backend Blueprint
+resource "aws_ecs_task_definition" "backend" {
+  family                   = "opsticket-backend"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = aws_iam_role.ecs_execution.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "backend"
+      image     = "node:alpine" # Temporary placeholder image
+      essential = true
+      portMappings = [
+        {
+          containerPort = 5000
+          hostPort      = 5000
+        }
+      ]
+    }
+  ])
+}
+
+# ==============================================================================
+# 5. COST OPTIMIZED SERVICES (Fargate Spot Deployment)
+# ==============================================================================
+# Frontend Service Manager
+resource "aws_ecs_service" "frontend" {
+  name            = "opsticket-frontend-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.frontend.arn
+  desired_count   = 1 # Strict cost limit (1 running container task)
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = [aws_subnet.private_app_1.id, aws_subnet.private_app_2.id]
+    security_groups = [aws_security_group.ecs.id]
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.frontend.arn
+    container_name   = "frontend"
+    container_port   = 80
+  }
+}
+
+# Backend Service Manager
+resource "aws_ecs_service" "backend" {
+  name            = "opsticket-backend-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.backend.arn
+  desired_count   = 1 # Strict cost limit
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = [aws_subnet.private_app_1.id, aws_subnet.private_app_2.id]
+    security_groups = [aws_security_group.ecs.id]
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.backend.arn
+    container_name   = "backend"
+    container_port   = 5000
+  }
+}

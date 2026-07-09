@@ -164,8 +164,3 @@ This is a living project. Here's what's on the roadmap:
 - **Prometheus + Grafana** — Observability so we can actually see what's happening in production.
 - **AWS deployment** — Get this running on real infrastructure with proper networking and secrets management.
 
-If you want to see where the project is headed, check out `roadmap.md`.
-
----
-
-*Built with curiosity and too much coffee.*
