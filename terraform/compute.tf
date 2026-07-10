@@ -45,13 +45,13 @@ resource "aws_lb_target_group" "frontend" {
 # Target Group 2: Backend API Routing Target
 resource "aws_lb_target_group" "backend" {
   name        = "opsticket-tg-backend"
-  port        = 5000 # Standard backend API service port
+  port        = 3000 # Aligned with ECS task definition container port
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip"
 
   health_check {
-    path                = "/api/health" # standard app health endpoint
+    path                = "/health" # Matches the backend app's GET /health endpoint
     healthy_threshold   = 2
     unhealthy_threshold = 5
     timeout             = 5
@@ -177,7 +177,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_NAME", value = aws_db_instance.database.db_name }, # <-- Changed from .postgres. to .database.
         { name = "DB_USER", value = aws_db_instance.database.username }, # <-- Changed from .postgres. to .database.
         { name = "DB_PASSWORD", value = var.db_password },
-        { name = "DB_SSL", value = "false" }
+        { name = "DB_SSL", value = "true" }
       ]
     }
   ])
