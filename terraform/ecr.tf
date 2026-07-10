@@ -2,6 +2,7 @@
 resource "aws_ecr_repository" "backend" {
   name                 = "opsticket-backend"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true # Allows us to delete the repo even if it has images in it (useful for CI/CD pipelines)
 
   image_scanning_configuration {
     scan_on_push = true # Automatically scans our images for security vulnerabilities on every push!
@@ -17,6 +18,7 @@ resource "aws_ecr_repository" "backend" {
 resource "aws_ecr_repository" "frontend" {
   name                 = "opsticket-frontend"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true # Allows us to delete the repo even if it has images in it (useful for CI/CD pipelines)
 
   image_scanning_configuration {
     scan_on_push = true
