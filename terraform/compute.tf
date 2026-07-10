@@ -80,7 +80,7 @@ resource "aws_lb_listener_rule" "api_routing" {
 
   action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.backend.arn
+    target_group_arn = aws_lb_target_group.backend.arn # This target group is now correctly using port 3000!
   }
 
   condition {
