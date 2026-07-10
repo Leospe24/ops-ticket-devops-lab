@@ -40,7 +40,7 @@ resource "aws_db_instance" "database" {
   # Database Credentials (Note: In a true pipeline, these would be passed via variables)
   db_name  = "opsticket"
   username = "dbadmin"
-  password = "SuperSecurePassword123!" # Replace or parameterize this later!
+  password = var.db_password # Sensitive variable passed from terraform/variables.tf
 
   # Networking & Security Hookups
   db_subnet_group_name   = aws_db_subnet_group.rds.name

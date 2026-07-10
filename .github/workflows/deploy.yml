@@ -55,6 +55,8 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -no-color
 
-      # Step 8: Production Rollout
+      # Step 8: Production Rollout with Secret Injection
       - name: Terraform Apply
         run: terraform apply -auto-approve
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }} # Pulls securely from GitHub's vault
