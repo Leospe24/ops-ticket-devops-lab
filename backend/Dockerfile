@@ -29,6 +29,10 @@ COPY package*.json ./
 RUN npm ci --omit=dev && \
     npm cache clean --force
 
+# 🔒 DOWNLOAD AWS RDS SSL ROOT CERTIFICATE
+RUN apk add --no-cache curl && \
+    curl -sS https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /app/global-bundle.pem
+
 # Copy application code from builder stage
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/knexfile.js ./

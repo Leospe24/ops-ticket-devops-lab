@@ -9,6 +9,17 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
+# Create a Log Group to capture container logs
+resource "aws_cloudwatch_log_group" "ecs_logs" {
+  name              = "/ecs/opsticket"
+  retention_in_days = 7
+
+  tags = {
+    Environment = "production"
+    Project     = "opsticket"
+  }
+}
+
 # ==============================================================================
 # 2. APPLICATION LOAD BALANCER STACK (Public Tier)
 # ==============================================================================
@@ -139,6 +150,14 @@ resource "aws_ecs_task_definition" "frontend" {
           hostPort      = 80
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_logs.name
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "frontend"
+        }
+      }
       environment = [
         {
           name  = "VITE_API_URL"
@@ -169,6 +188,14 @@ resource "aws_ecs_task_definition" "backend" {
           hostPort      = 3000
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.ecs_logs.name
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "backend"
+        }
+      }
       environment = [
         { name = "NODE_ENV", value = "production" },
         { name = "PORT", value = "3000" },
@@ -177,7 +204,8 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_NAME", value = aws_db_instance.database.db_name }, # <-- Changed from .postgres. to .database.
         { name = "DB_USER", value = aws_db_instance.database.username }, # <-- Changed from .postgres. to .database.
         { name = "DB_PASSWORD", value = var.db_password },
-        { name = "DB_SSL", value = "false" },
+        { name = "DB_SSL", value = "true" },
+        { name = "DB_SSL_CA", value = "/app/global-bundle.pem" },
         { name = "JWT_SECRET", value = var.jwt_secret },
         { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" }
       ]
