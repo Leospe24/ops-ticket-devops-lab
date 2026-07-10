@@ -2,6 +2,7 @@ variable "jwt_secret" {
   type        = string
   description = "JWT signing secret for authentication tokens"
   sensitive   = true
+  default     = "dev-jwt-secret"
 }
 
 variable "db_password" {
