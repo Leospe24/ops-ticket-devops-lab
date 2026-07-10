@@ -34,6 +34,15 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Detach target groups from listeners (pre-destroy cleanup)
+        run: |
+          terraform destroy -auto-approve \
+            -target=aws_lb_listener_rule.api_routing \
+            -target=aws_lb_listener.http \
+          || echo "ℹ️  Listener rule may already be detached — continuing"
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+
       - name: Terraform Destroy
         run: terraform destroy -auto-approve
         env:
