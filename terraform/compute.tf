@@ -172,11 +172,11 @@ resource "aws_ecs_task_definition" "backend" {
       environment = [
         { name = "NODE_ENV", value = "production" },
         { name = "PORT", value = "3000" },
-        { name = "DB_HOST", value = aws_db_instance.postgres.address }, # Injects dynamic database endpoint DNS string
+        { name = "DB_HOST", value = aws_db_instance.database.address }, # <-- Changed from .postgres. to .database.
         { name = "DB_PORT", value = "5432" },
-        { name = "DB_NAME", value = aws_db_instance.postgres.db_name },
-        { name = "DB_USER", value = aws_db_instance.postgres.username },
-        { name = "DB_PASSWORD", value = var.db_password }, # Secret token handled cleanly through pipeline injections
+        { name = "DB_NAME", value = aws_db_instance.database.db_name }, # <-- Changed from .postgres. to .database.
+        { name = "DB_USER", value = aws_db_instance.database.username }, # <-- Changed from .postgres. to .database.
+        { name = "DB_PASSWORD", value = var.db_password },
         { name = "DB_SSL", value = "false" }
       ]
     }
