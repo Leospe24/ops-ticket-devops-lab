@@ -117,26 +117,32 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
 }
 
 # ==============================================================================
-# 4. TASK DEFINITIONS (The Container Blueprints)
+# 4. TASK DEFINITIONS (The Real Container Architectures)
 # ==============================================================================
 # Frontend Blueprint
 resource "aws_ecs_task_definition" "frontend" {
   family                   = "opsticket-frontend"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256" # Minimal 0.25 vCPU
-  memory                   = "512" # Minimal 512MB RAM
+  cpu                      = "256"
+  memory                   = "512"
   execution_role_arn       = aws_iam_role.ecs_execution.arn
 
   container_definitions = jsonencode([
     {
       name      = "frontend"
-      image     = "nginx:alpine" # Temporary placeholder image until Phase 4 pipeline builds our real image
+      image     = "${aws_ecr_repository.frontend.repository_url}:latest" # Pointing directly to our real ECR Registry image
       essential = true
       portMappings = [
         {
           containerPort = 80
           hostPort      = 80
+        }
+      ]
+      environment = [
+        {
+          name  = "VITE_API_URL"
+          value = "http://${aws_lb.main.dns_name}" # Directs the client side requests back to our public Load Balancer!
         }
       ]
     }
@@ -155,13 +161,23 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = jsonencode([
     {
       name      = "backend"
-      image     = "node:alpine" # Temporary placeholder image
+      image     = "${aws_ecr_repository.backend.repository_url}:latest" # Pointing directly to our real ECR Registry image
       essential = true
       portMappings = [
         {
-          containerPort = 5000
-          hostPort      = 5000
+          containerPort = 3000 # Correctly aligned with dev team properties
+          hostPort      = 3000
         }
+      ]
+      environment = [
+        { name = "NODE_ENV", value = "production" },
+        { name = "PORT", value = "3000" },
+        { name = "DB_HOST", value = aws_db_instance.postgres.address }, # Injects dynamic database endpoint DNS string
+        { name = "DB_PORT", value = "5432" },
+        { name = "DB_NAME", value = aws_db_instance.postgres.db_name },
+        { name = "DB_USER", value = aws_db_instance.postgres.username },
+        { name = "DB_PASSWORD", value = var.db_password }, # Secret token handled cleanly through pipeline injections
+        { name = "DB_SSL", value = "false" }
       ]
     }
   ])
@@ -175,7 +191,7 @@ resource "aws_ecs_service" "frontend" {
   name            = "opsticket-frontend-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.frontend.arn
-  desired_count   = 1 # Strict cost limit (1 running container task)
+  desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -195,7 +211,7 @@ resource "aws_ecs_service" "backend" {
   name            = "opsticket-backend-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.backend.arn
-  desired_count   = 1 # Strict cost limit
+  desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -206,6 +222,6 @@ resource "aws_ecs_service" "backend" {
   load_balancer {
     target_group_arn = aws_lb_target_group.backend.arn
     container_name   = "backend"
-    container_port   = 5000
+    container_port   = 3000 # Mapped accurately to the backend application container
   }
 }
