@@ -1,3 +1,9 @@
+variable "jwt_secret" {
+  type        = string
+  description = "JWT signing secret for authentication tokens"
+  sensitive   = true
+}
+
 variable "db_password" {
   type        = string
   description = "The master password for the RDS PostgreSQL database instance"
