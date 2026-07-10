@@ -177,7 +177,9 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_NAME", value = aws_db_instance.database.db_name }, # <-- Changed from .postgres. to .database.
         { name = "DB_USER", value = aws_db_instance.database.username }, # <-- Changed from .postgres. to .database.
         { name = "DB_PASSWORD", value = var.db_password },
-        { name = "DB_SSL", value = "true" }
+        { name = "DB_SSL", value = "true" },
+        { name = "JWT_SECRET", value = var.jwt_secret },
+        { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" }
       ]
     }
   ])
