@@ -58,6 +58,10 @@ resource "aws_lb_target_group" "backend" {
     interval            = 30
     matcher             = "200"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # Main Entry Listener (Port 80 HTTP Entrypoint)
