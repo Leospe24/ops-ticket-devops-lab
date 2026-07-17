@@ -45,10 +45,6 @@ jobs:
             -target=aws_lb_listener_rule.api_routing \
             -target=aws_lb_listener.http \
           || echo "ℹ️  Listener rule may already be detached — continuing"
-        env:
-          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve
-        env:
-          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
