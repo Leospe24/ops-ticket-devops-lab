@@ -127,6 +127,12 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Fetch the JWT secret securely from AWS SSM Parameter Store at runtime
+data "aws_ssm_parameter" "jwt_secret" {
+  name            = "/opsticket/production/jwt_secret"
+  with_decryption = true
+}
+
 # ==============================================================================
 # 4. TASK DEFINITIONS (The Real Container Architectures)
 # ==============================================================================
@@ -206,7 +212,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_PASSWORD", value = data.aws_ssm_parameter.db_password.value },
         { name = "DB_SSL", value = "true" },
         { name = "DB_SSL_CA", value = "/app/global-bundle.pem" },
-        { name = "JWT_SECRET", value = var.jwt_secret },
+        { name = "JWT_SECRET", value = data.aws_ssm_parameter.jwt_secret.value },
         { name = "FRONTEND_URL", value = "http://${aws_lb.main.dns_name}" }
       ]
     }
