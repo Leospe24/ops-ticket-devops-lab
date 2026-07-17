@@ -203,7 +203,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_PORT", value = "5432" },
         { name = "DB_NAME", value = aws_db_instance.database.db_name }, # <-- Changed from .postgres. to .database.
         { name = "DB_USER", value = aws_db_instance.database.username }, # <-- Changed from .postgres. to .database.
-        { name = "DB_PASSWORD", value = var.db_password },
+        { name = "DB_PASSWORD", value = data.aws_ssm_parameter.db_password.value },
         { name = "DB_SSL", value = "true" },
         { name = "DB_SSL_CA", value = "/app/global-bundle.pem" },
         { name = "JWT_SECRET", value = var.jwt_secret },

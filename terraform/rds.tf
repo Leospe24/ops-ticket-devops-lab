@@ -1,3 +1,9 @@
+# Fetch the database password securely from AWS SSM Parameter Store at runtime
+data "aws_ssm_parameter" "db_password" {
+  name            = "/opsticket/production/db_password"
+  with_decryption = true
+}
+
 # ==============================================================================
 # 1. DATABASE SUBNET GROUP (Tells RDS where it's allowed to sit)
 # ==============================================================================
@@ -40,7 +46,7 @@ resource "aws_db_instance" "database" {
   # Database Credentials (Note: In a true pipeline, these would be passed via variables)
   db_name  = "opsticket"
   username = "dbadmin"
-  password = var.db_password # Sensitive variable passed from terraform/variables.tf
+  password = data.aws_ssm_parameter.db_password.value
 
   # Networking & Security Hookups
   db_subnet_group_name   = aws_db_subnet_group.rds.name
