@@ -1,99 +1,47 @@
-# Ops-Ticket: Full-Stack IT Support Portal & DevOps Lifecycle Engine
+# 🛣️ OpsTicket — Engineering & Infrastructure Roadmap
 
-Ops-Ticket is a production-ready, three-tier IT Ticketing and Incident Management system. This repository showcases a complete DevOps lifecycle: from local containerized development to a secure, decoupled, highly available cloud infrastructure on AWS, complete with automated CI/CD and production monitoring.
-
----
-
-## 🛠️ The Tech Stack
-
-- **Frontend:** React.js (Single Page Application)
-- **Backend API:** Node.js (Express) / Python (FastAPI)
-- **Database:** PostgreSQL
-- **Infrastructure & Automation:** Terraform, Docker, GitHub Actions, Boto3, Bash
-- **Observability:** Prometheus & Grafana
+This document outlines the planned architectural enhancements and operational milestones for **OpsTicket**. While the current platform demonstrates a fully containerized, IaC-driven AWS deployment, this roadmap defines the trajectory toward full enterprise production readiness.
 
 ---
 
-## 🏗️ System Architecture
+## 🎯 Architectural Vision
 
-The project transitions from an all-in-one containerized local environment to a highly secure, decoupled managed-service architecture on AWS.
-
-### Architectural Highlights:
-
-- **Optimized Frontend Hosting:** To minimize production costs and leverage global caching, the production frontend drops the local Docker layer. It is hosted as a static application on **AWS S3** and distributed globally via **Amazon CloudFront (CDN)**.
-- **Network Isolation:** The infrastructure is locked down inside a custom **AWS VPC**. The backend application servers and the database live strictly within **Private Subnets**, entirely hidden from the public internet.
-- **Public Entry Point:** Public traffic is gated through an **AWS Application Load Balancer (ALB)**, which acts as the sole proxy forwarding verified traffic to the backend containers.
-- **Serverless Compute:** The backend API container runs on **AWS ECS Fargate**, completely removing OS management and infrastructure overhead.
-- **Managed Data Tier:** Database persistence is migrated from local Docker volumes to a multi-AZ **AWS RDS PostgreSQL** instance, utilizing automated backups and storage scaling.
+Transition OpsTicket from a baseline DevOps portfolio project to an enterprise-grade, zero-trust, highly available cloud platform.
 
 ---
 
-## 📦 Local Development (Docker Compose)
+## 📌 Phase 1: Security & Identity Hardening
+> **Focus**: Zero-Trust Security, Compliance & Secret Lifecycle
 
-For local development, the full stack is containerized to ensure an isolated environment that mirrors cloud environment variables.
+- [ ] **HTTPS & Custom Domain**: Issue AWS ACM TLS/SSL certificates and attach HTTPS (Port 443) listeners to the Application Load Balancer.
+- [ ] **AWS WAF (Web Application Firewall)**: Attach AWS WAF to the ALB with rate-limiting rules and OWASP Top 10 protection against SQLi and XSS.
+- [ ] **Secrets Rotation**: Automate AWS SSM Parameter Store / Secrets Manager password and JWT secret rotation.
+- [ ] **HttpOnly Cookie Authentication**: Migrate JWT tokens from browser `localStorage` to encrypted `httpOnly` secure cookies.
 
-### To spin up the environment locally:
+---
 
-```bash
-# Clone the repository
-git clone [https://github.com/yourusername/ops-ticket.git](https://github.com/yourusername/ops-ticket.git)
-cd ops-ticket
+## 📌 Phase 2: High Availability, Resilience & Scaling
+> **Focus**: Autoscaling, Database Redundancy & Disaster Recovery
 
-# Start all three tiers simultaneously
-docker compose up --build
-```
+- [ ] **ECS Fargate Autoscaling**: Implement Target Tracking Scaling policies for ECS tasks based on CPU and Memory utilization thresholds.
+- [ ] **RDS Multi-AZ Deployment**: Upgrade Amazon RDS PostgreSQL instance to Multi-AZ standby replica for zero-downtime failover.
+- [ ] **Read Replicas & Connection Pooling**: Add PgBouncer and an RDS Read Replica to offload heavy read queries from the primary DB.
+- [ ] **Cross-Region Backups**: Configure automated cross-region replication for database backups and S3 Terraform state storage.
 
-Note: The frontend includes a Dockerfile utilizing a multi-stage Nginx build strictly for local testing and architectural portability.
+---
 
-## 🚀 The CI/CD Pipeline (GitHub Actions)
+## 📌 Phase 3: Advanced Observability & Telemetry
+> **Focus**: Metrics, Distributed Tracing & Proactive Alerting
 
-The deployment pipeline is triggered on every git push to main, automatically splitting into two parallel workflows optimized for modern cloud delivery:
+- [ ] **Prometheus & Grafana**: Expose Prometheus `/metrics` endpoints on backend containers and build Grafana dashboards for API golden signals (Latency, Traffic, Errors, Saturation).
+- [ ] **AWS X-Ray Distributed Tracing**: Instrument Express.js API middleware with AWS X-Ray to trace requests across ALB → ECS → RDS.
+- [ ] **Structured JSON Logging**: Implement Pino/Winston structured logging and stream container stdout directly to CloudWatch Logs Insights.
 
-```text
-┌──> Build Backend Image ──> Push to AWS ECR ──> Deploy to ECS Fargate (Zero-Downtime)
-[GitHub Actions CI/CD] ┤
-└──> Compile Production Assets ──> AWS CLI Sync ──> Host on AWS S3 / CloudFront
-```
+---
 
-Backend Pipeline: Lints code → Builds Docker Image → Scans for Vulnerabilities → Pushes to AWS ECR → Triggers a rolling deployment on AWS ECS Fargate.
+## 📌 Phase 4: CI/CD & GitOps Maturity
+> **Focus**: Zero-Downtime Deployments & Automated Quality Gates
 
-Frontend Pipeline: Compiles code to a production static dist/ folder → Synchronizes assets directly to AWS S3 via the AWS CLI → Invalidate CloudFront cache.
-
-## 🤖 Automation & Reporting (Boto3 & Bash)
-
-This repository includes a /scripts directory containing operational automation tools written in Bash and Python (Boto3) to simulate real-world system administration:
-
-```text
-backup-db.sh: A database backup script that runs pre-deployment, dumping data out of the system safely.
-
-aws_cost_optimizer.py: A Python Boto3 script triggered weekly via GitHub Actions that scans the AWS account for orphaned resources (e.g., unattached EBS volumes, old S3 file versions), compiling a text-based Optimization Report sent to the administrator.
-```
-
-## 📊 Observability (Prometheus & Grafana)
-
-The production backend containers expose a /metrics endpoint.
-
-Prometheus is deployed to scrape performance metrics continuously (API latency, HTTP error rate tracking, request volume).
-
-Grafana visualizes this data through a custom metrics dashboard, allowing real-time identification of application bottlenecks or server strains.
-
-## 📂 Repository Directory Layout
-
-```text
-├── .github/workflows/
-│ └── deploy.yml # Complete Dual-Track CI/CD Pipeline
-├── backend/
-│ ├── src/ # Node.js/Python API Code
-│ └── Dockerfile # Production API Dockerfile
-├── frontend/
-│ ├── src/ # React Application Code
-│ └── Dockerfile # Local Nginx Multi-stage Dockerfile
-├── terraform/
-│ ├── vpc.tf # Public/Private Subnet Networking
-│ ├── ecs.tf # ECS Fargate & ALB Configuration
-│ ├── rds.tf # PostgreSQL Managed Database
-│ └── s3_cloudfront.tf # Frontend Hosting & CDN
-└── scripts/
-├── backup-db.sh # Bash Maintenance Script
-└── aws_cost_optimizer.py # Boto3 Cloud Financial Report Engine
-```
+- [ ] **ECS Blue/Green Deployments**: Integrate AWS CodeDeploy for blue/green zero-downtime deployments with automatic rollback on CloudWatch alarm triggers.
+- [ ] **End-to-End (E2E) Testing**: Add Playwright / Cypress integration tests in the GitHub Actions CI pipeline.
+- [ ] **Container Vulnerability Scanning**: Integrate Snyk or Trivy security scanning in GitHub Actions before pushing images to Amazon ECR.

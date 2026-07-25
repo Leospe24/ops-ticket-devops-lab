@@ -1,166 +1,161 @@
-# ⚡ OpsTicket — IT Support, Cloud-Native
+# OpsTicket DevOps Project
 
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue)](https://github.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)](https://www.docker.com/)
-[![Node](https://img.shields.io/badge/Node.js-18-green)](https://nodejs.org/)
+[![AWS](https://img.shields.io/badge/AWS-Terraform%2FECS-orange)](https://aws.amazon.com/)
 
----
+## 🎥 Project Demo Video
 
-## What I Built
+> 🎬 **Watch the 3-Minute OpsTicket Demo Video**: [Link to Video Demo](YOUR_VIDEO_URL_HERE)
 
-I built OpsTicket because I wanted a real project that actually touched every layer of the stack — frontend, backend, database, and infrastructure. It's an IT support ticket system where users can create tickets, engineers get assigned to handle them, and admins have a bird's-eye view of everything. Think of it as the internal tool your company's IT department wishes they had.
+## What this project is
 
-This is my DevOps portfolio piece. I didn't want another to-do app or a weather widget — I wanted something that showed I understand how production systems actually work. So I wired up Docker Compose for local dev, GitHub Actions for CI, PostgreSQL for data persistence, and JWT for authentication. I learned a ton building it, and honestly some of the lessons (like why graceful shutdown matters) only clicked once I saw them break in practice.
+OpsTicket is a simple IT support ticket app. It is also a beginner-friendly DevOps project that shows how a web app can be built, tested, containerized, and deployed to the cloud.
 
-The goal was to build something interview-ready. Not perfect, but honest — a project I can walk through and explain every design decision.
+This project is good for learning because it touches many common DevOps topics without being too large. You can see how an application moves from local development into a cloud-style setup.
 
----
+## Why this project matters for DevOps
 
-## Tech Stack
+This repo is a good learning project because it includes:
 
-| Layer       | Technology                       |
-|-------------|----------------------------------|
-| Frontend    | React 18 + Vite 5               |
-| Backend     | Node.js 18 + Express 4 + Knex 3 |
-| Database    | PostgreSQL 16                   |
-| Auth        | JWT + bcrypt                    |
-| Testing     | Jest (backend), Vitest (frontend) |
-| Containers  | Docker + Docker Compose         |
-| CI/CD       | GitHub Actions                  |
+- a web app with a frontend and backend,
+- a database for storing data,
+- Docker for running services locally,
+- GitHub Actions for automation,
+- Terraform for creating cloud infrastructure,
+- AWS services such as ECS, RDS, and a load balancer,
+- basic backup and monitoring practices.
 
----
+If you are new to DevOps, this project helps you understand the big picture before you go deeper into advanced tools.
 
-## Quick Start (Local)
+## Main parts of the project
 
-Clone the repo, drop in your env file, and spin everything up with one command:
+### 1. Application
+
+- Frontend: React + Vite
+- Backend: Node.js + Express
+- Database: PostgreSQL
+- Authentication: JWT and password hashing
+
+### 2. Containers and local development
+
+- Docker Compose is used to run the app locally.
+- This helps you test the app in a setup that looks closer to production.
+
+### 3. Cloud and infrastructure
+
+- Terraform is used to define AWS resources.
+- The project includes networking, a database, container services, and monitoring.
+- This is a simple example of infrastructure as code.
+
+### 4. Automation
+
+- GitHub Actions runs CI checks.
+- The workflow also helps build and deploy application images.
+
+## How the app works
+
+A user can:
+
+- log in or register,
+- view tickets,
+- create new tickets,
+- see ticket statistics.
+
+The backend handles authentication and ticket logic. The frontend shows the data to the user. The database stores the information.
+
+## Local setup
+
+To run the project locally:
 
 ```bash
-git clone <repo>
-cd ops-ticket
+git clone <repo-url>
+cd ops-ticket-devops-infrastructure
 cp .env.example .env
 docker compose up --build
 ```
 
-That's it. Docker Compose will provision PostgreSQL, the Node.js API, and the React frontend. The backend runs on port 3001, the frontend on port 5173, and Postgres on 5432.
+After that:
 
----
+- the frontend should be available in the browser,
+- the backend API will be running,
+- PostgreSQL will be available for local testing.
 
-## Running Tests
+## Testing
 
-**Backend:**
+Backend tests:
+
 ```bash
 cd backend && npm test
 ```
 
-**Frontend:**
+Frontend tests:
+
 ```bash
 cd frontend && npm test
 ```
 
-Backend tests cover API routes and database logic. Frontend tests use Vitest for components and hooks.
+## DevOps topics covered
 
----
+This project is a good beginner example for learning:
 
-## CI/CD Pipeline
+- Docker and containers
+- Environment variables and secrets
+- CI/CD with GitHub Actions
+- Infrastructure as Code with Terraform
+- AWS basics such as ECS, RDS, and networking
+- Monitoring and alerts
+- Backup and recovery basics
 
-Every push to `main` triggers the GitHub Actions pipeline:
+## Project structure
 
-1. **Build** — Packages the Docker stack (backend + frontend + Postgres).
-2. **Spin up services** — Brings up PostgreSQL for integration testing.
-3. **Run tests** — Executes the Jest test suite against the live database.
-4. **Health check** — Verifies the API responds healthy on its `/health` endpoint.
-5. **Teardown** — Tears down the stack cleanly.
-
-The pipeline is designed to catch issues before anything touches production. No manual deploys, no "works on my machine" surprises.
-
----
-
-## Key Features
-
-- Role-based access control (admin, engineer, user)
-- Rate-limited auth endpoints to prevent brute-force attacks
-- DB-aware health checks that verify the database connection is alive
-- Graceful shutdown on SIGTERM — no dropped requests during deploys
-- Zero hardcoded secrets — everything fails fast if env vars are missing
-- Transaction-safe database migrations using Knex
-- Structured multi-stage Docker builds for smaller, more secure images
-
----
-
-## Project Structure
-
-```
-ops-ticket/
-├── backend/
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── middleware/
-│   │   ├── routes/
-│   │   └── server.js
-│   ├── tests/
-│   └── knexfile.js
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── App.jsx
-│   └── vite.config.js
-├── scripts/
-├── terraform/
-├── docker-compose.yml
-└── roadmap.md
+```text
+backend/         - Node.js API and database access
+frontend/        - React app for the user interface
+terraform/       - AWS infrastructure defined with Terraform
+terraform-bootstrap/ - bootstrap resources for Terraform state
+.github/workflows/ - CI/CD automation
+scripts/         - helper scripts such as database backup
+docker-compose.yml - local container setup
 ```
 
----
+## System Architecture
 
-## Architecture
+<p align="center">
+  <img src="opsticket-architecture.png" alt="OpsTicket Architecture Diagram" width="850"/>
+</p>
 
-```
-                        ┌─────────────┐
-                        │   CloudFront│
-                        │  (React SPA)│
-                        └──────┬──────┘
-                               │
-                        ┌──────▼──────┐
-                        │     ALB     │
-                        │   ( HTTPS ) │
-                        └──────┬──────┘
-                               │
-              ┌────────────────┼────────────────┐
-              │           AWS VPC               │
-              │ ┌─────────────────────────────┐ │
-              │ │     ECS Fargate             │ │
-              │ │  (Node.js API container)    │ │
-              │ └────────────┬────────────────┘ │
-              │              │                   │
-              │ ┌────────────▼────────────────┐ │
-              │ │     RDS PostgreSQL          │ │
-              │ │      (Private Subnet)       │ │
-              │ └─────────────────────────────┘ │
-              └─────────────────────────────────┘
-```
+The application architecture is structured as follows:
 
-The frontend is a static SPA served via CloudFront. All API traffic hits an Application Load Balancer over HTTPS, which routes to the ECS Fargate container running the Node.js backend. The database lives in a private subnet — unreachable directly from the internet.
+- **Frontend & Backend**: React SPA communicates with Node.js / Express REST API over HTTP/JSON.
+- **Database Layer**: PostgreSQL handles persistent data storage with isolated migrations and seeds.
+- **Cloud Infrastructure (AWS & Terraform)**:
+  - **Multi-AZ VPC**: Public subnets (ALB), Private App subnets (ECS Fargate), and Private Data subnets (RDS).
+  - **Application Load Balancer (ALB)**: Public entry point with path-based routing (`/api/*` $\rightarrow$ Backend port 3000, default $\rightarrow$ Frontend port 80).
+  - **Amazon RDS PostgreSQL**: Private database instance with security group isolation allowing access only from ECS tasks.
+- **CI/CD & Security**: GitHub Actions pipeline uses AWS OIDC role assumption (passwordless) for automated testing, DB backup verification, and deployment. Runtime secrets are managed via AWS SSM Parameter Store.
 
----
+## What a beginner can learn from this project
 
-## What I Learned
+This project is useful if you want to practice:
 
-Building this project taught me things that textbooks skip:
+- how apps are packaged with Docker,
+- how CI pipelines work,
+- how infrastructure can be created with code,
+- how cloud services connect together,
+- how to think about security and secrets,
+- how to explain a project in interviews.
 
-- **Multi-stage Docker builds** reduce the final image size dramatically. Shipping only what the app needs means fewer attack surfaces and faster cold starts.
-- **`rejectUnauthorized: false` in production DB connections is a red flag** — it disables TLS certificate verification. I learned to treat SSL as non-negotiable for any connection that touches production.
-- **Database migrations should be wrapped in transactions** — if a migration partially fails, you want it to roll back cleanly rather than leave the schema in a broken state.
-- **Graceful shutdown prevents dropped requests** — when ECS sends SIGTERM during a new deployment, the server needs time to finish in-flight requests before exiting. Without it, users get connection errors for no good reason.
-- **Liveness vs readiness probes are different things** — a liveness probe tells Kubernetes "is this container alive?" A readiness probe tells it "is this container ready to receive traffic?" Confusing the two leads to flaky deployments.
+## Next steps
 
----
+If you want to continue learning, the next steps could be:
 
-## Next Steps
+- add better monitoring and logs,
+- improve deployment automation,
+- add more AWS security practices,
+- learn how to manage secrets in a more production-ready way,
+- explore container orchestration beyond this basic setup.
 
-This is a living project. Here's what's on the roadmap:
+## Summary
 
-- **CD pipeline** — Auto-deploy to ECS on merge to main (not just CI).
-- **Prometheus + Grafana** — Observability so we can actually see what's happening in production.
-- **AWS deployment** — Get this running on real infrastructure with proper networking and secrets management.
-
+OpsTicket is not just a ticket app. It is also a simple DevOps learning project that shows how application code, infrastructure, and automation can work together.
