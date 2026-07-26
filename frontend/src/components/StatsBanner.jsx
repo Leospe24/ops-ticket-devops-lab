@@ -3,34 +3,37 @@ import React from 'react';
 const styles = {
   banner: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-    gap: '16px',
-    marginBottom: '24px',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    gap: '24px',
+    marginBottom: '40px',
   },
   card: {
-    background: '#fff',
-    borderRadius: '8px',
-    padding: '16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+    background: '#ffffff',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+    border: '1px solid #f1f5f9',
     textAlign: 'center',
+    transition: 'transform 0.2s',
   },
   value: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#1a202c',
+    fontSize: '36px',
+    fontWeight: '800',
+    color: '#0f172a',
     margin: '8px 0',
   },
   label: {
-    fontSize: '12px',
+    fontSize: '13px',
+    fontWeight: '600',
     textTransform: 'uppercase',
-    color: '#718096',
+    color: '#64748b',
     letterSpacing: '0.05em',
   },
   critical: {
-    color: '#e53e3e',
+    color: '#ef4444',
   },
   active: {
-    color: '#dd6b20',
+    color: '#f97316',
   },
 };
 

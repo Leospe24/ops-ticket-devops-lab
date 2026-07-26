@@ -261,3 +261,16 @@ resource "aws_ecs_service" "backend" {
     container_port   = 3000 # Mapped accurately to the backend application container
   }
 }
+
+# ==============================================================================
+# 6. OUTPUTS — Quick access to the live application URL
+# ==============================================================================
+output "alb_dns_name" {
+  value       = aws_lb.main.dns_name
+  description = "The raw DNS name of the Application Load Balancer"
+}
+
+output "app_url" {
+  value       = "http://${aws_lb.main.dns_name}"
+  description = "The full HTTP URL to open in a browser"
+}
