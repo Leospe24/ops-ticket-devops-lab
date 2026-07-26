@@ -57,7 +57,7 @@ jobs:
   docker:
     name: "App Image Build & Push"
     needs: terraform # Only runs after Terraform completes successfully!
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
     runs-on: ubuntu-latest
 
     steps:
