@@ -1,42 +1,81 @@
 #!/usr/bin/env bash
 # =============================================================================
 # get-url.sh — Instantly fetch the live OpsTicket app URL
+#
 # Usage:
-#   ./scripts/get-url.sh           → prints the URL
-#   ./scripts/get-url.sh --open    → prints + opens it in the browser
+#   ./scripts/get-url.sh              → prints the URL
+#   ./scripts/get-url.sh --open       → prints + opens in browser
+#   ./scripts/get-url.sh --set <url>  → manually save a URL to local cache
+#
+# URL resolution order:
+#   1. AWS CLI query (if credentials are available)
+#   2. Cached URL from .opsticket-url (set by --set or a previous AWS fetch)
+#   3. Friendly error with instructions
 # =============================================================================
 
 set -euo pipefail
 
+CACHE_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.opsticket-url"
+
+# --set <url>: manually cache a URL (useful when AWS CLI isn't configured locally)
+if [[ "${1:-}" == "--set" && -n "${2:-}" ]]; then
+  echo "${2}" > "$CACHE_FILE"
+  echo "✅ URL saved to cache: ${2}"
+  echo "   Run './scripts/get-url.sh --open' to open it."
+  exit 0
+fi
+
 echo ""
-echo "🔍 Fetching live app URL from AWS..."
+echo "🔍 Fetching live app URL..."
 echo ""
 
-# Query the ALB directly via AWS CLI — no terraform wrapper issues
-ALB_DNS=$(aws elbv2 describe-load-balancers \
-  --names opsticket-alb \
-  --query 'LoadBalancers[0].DNSName' \
-  --output text 2>/dev/null || echo "")
+APP_URL=""
 
-if [[ -z "$ALB_DNS" || "$ALB_DNS" == "None" ]]; then
-  echo "❌ ALB 'opsticket-alb' not found."
-  echo "   Make sure you have run 'terraform apply' at least once."
-  echo "   Hint: cd terraform && terraform apply -auto-approve"
+# Strategy 1: Query AWS CLI directly (works in CI and when local creds are set)
+if command -v aws &>/dev/null; then
+  ALB_DNS=$(aws elbv2 describe-load-balancers \
+    --names opsticket-alb \
+    --query 'LoadBalancers[0].DNSName' \
+    --output text 2>/dev/null || echo "")
+
+  if [[ -n "$ALB_DNS" && "$ALB_DNS" != "None" ]]; then
+    APP_URL="http://$ALB_DNS"
+    # Cache it for future offline use
+    echo "$APP_URL" > "$CACHE_FILE"
+  fi
+fi
+
+# Strategy 2: Fall back to cached URL
+if [[ -z "$APP_URL" && -f "$CACHE_FILE" ]]; then
+  APP_URL=$(cat "$CACHE_FILE")
+  echo "⚠️  AWS CLI not available or no credentials — using cached URL."
+  echo "   To refresh: configure AWS credentials and re-run this script."
+  echo ""
+fi
+
+# Strategy 3: Give up with clear instructions
+if [[ -z "$APP_URL" ]]; then
+  echo "❌ Could not determine the app URL."
+  echo ""
+  echo "   Option A — Set it manually (paste from GitHub Actions summary):"
+  echo "   ./scripts/get-url.sh --set http://opsticket-alb-xxxx.us-east-1.elb.amazonaws.com"
+  echo ""
+  echo "   Option B — Configure AWS CLI credentials then re-run:"
+  echo "   aws configure  (or set AWS_PROFILE)"
+  echo ""
   exit 1
 fi
 
-APP_URL="http://$ALB_DNS"
-
-echo "┌─────────────────────────────────────────────────────────────┐"
-echo "│  🚀 OpsTicket is live!                                      │"
-echo "│                                                             │"
-printf  "│  App URL  : %-47s │\n" "$APP_URL"
-printf  "│  API URL  : %-47s │\n" "$APP_URL/api"
-printf  "│  Health   : %-47s │\n" "$APP_URL/api/health"
-echo "└─────────────────────────────────────────────────────────────┘"
+echo "┌─────────────────────────────────────────────────────────────────┐"
+echo "│  🚀 OpsTicket is live!                                          │"
+echo "│                                                                 │"
+printf  "│  🌐 App    : %-51s │\n" "$APP_URL"
+printf  "│  🔌 API    : %-51s │\n" "$APP_URL/api"
+printf  "│  ❤️  Health : %-51s │\n" "$APP_URL/api/health"
+echo "└─────────────────────────────────────────────────────────────────┘"
 echo ""
 
-# Copy URL to clipboard if xclip/pbcopy is available
+# Copy URL to clipboard if available
 if command -v xclip &>/dev/null; then
   echo "$APP_URL" | xclip -selection clipboard
   echo "📋 URL copied to clipboard"

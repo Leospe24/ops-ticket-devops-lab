@@ -33,6 +33,7 @@ if (process.env.NODE_ENV !== 'test') {
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketRoutes);
 
+// Internal ALB health check (hits container directly on port 3000)
 app.get('/health', async (_req, res) => {
   try {
     await db.raw('SELECT 1');
@@ -41,6 +42,17 @@ app.get('/health', async (_req, res) => {
     res.status(503).json({ status: 'DOWN', reason: 'Database unreachable' });
   }
 });
+
+// Public health check — accessible via ALB at /api/health
+app.get('/api/health', async (_req, res) => {
+  try {
+    await db.raw('SELECT 1');
+    res.json({ status: 'UP', database: 'CONNECTED' });
+  } catch (err) {
+    res.status(503).json({ status: 'DOWN', reason: 'Database unreachable' });
+  }
+});
+
 
 // 404 fallback
 app.use((_req, res) => {
