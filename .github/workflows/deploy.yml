@@ -56,11 +56,19 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
         run: terraform apply -auto-approve
 
-      # Capture the live ALB URL from Terraform state and expose it as a job output
+      # Query the ALB DNS directly via AWS CLI — avoids terraform wrapper exit-code noise
       - name: Capture App URL
         id: tf_output
         run: |
-          APP_URL=$(terraform output -raw app_url 2>/dev/null || echo "")
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names opsticket-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text 2>/dev/null || echo "")
+          if [[ -n "$ALB_DNS" && "$ALB_DNS" != "None" ]]; then
+            APP_URL="http://$ALB_DNS"
+          else
+            APP_URL="(ALB not yet provisioned — run terraform apply first)"
+          fi
           echo "app_url=$APP_URL" >> $GITHUB_OUTPUT
           echo "🌐 Live URL: $APP_URL"
 
@@ -108,9 +116,17 @@ jobs:
 
       # Print a deployment summary with the live URL in the Actions run log
       - name: "🚀 Deployment Summary"
-        env:
-          APP_URL: ${{ needs.terraform.outputs.app_url }}
         run: |
+          # Re-query ALB via AWS CLI — no terraform wrapper issues
+          ALB_DNS=$(aws elbv2 describe-load-balancers \
+            --names opsticket-alb \
+            --query 'LoadBalancers[0].DNSName' \
+            --output text 2>/dev/null || echo "")
+          if [[ -n "$ALB_DNS" && "$ALB_DNS" != "None" ]]; then
+            APP_URL="http://$ALB_DNS"
+          else
+            APP_URL="(ALB not found — has terraform apply been run?)"
+          fi
           echo ""
           echo "╔══════════════════════════════════════════════════════╗"
           echo "║           ✅ OpsTicket Deployment Complete!          ║"
@@ -120,7 +136,7 @@ jobs:
           echo "║  ❤️  Health  : $APP_URL/api/health"
           echo "╚══════════════════════════════════════════════════════╝"
           echo ""
-          # Also write to GitHub Actions job summary (visible in the Actions UI)
+          # Write clickable links to the GitHub Actions job summary tab
           echo "## 🚀 OpsTicket Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| | URL |" >> $GITHUB_STEP_SUMMARY

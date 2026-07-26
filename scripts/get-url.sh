@@ -8,37 +8,41 @@
 
 set -euo pipefail
 
-TERRAFORM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../terraform" && pwd)"
-
 echo ""
-echo "🔍 Fetching live app URL from Terraform state..."
+echo "🔍 Fetching live app URL from AWS..."
 echo ""
 
-# Pull the URL directly from Terraform state (no AWS console needed)
-APP_URL=$(terraform -chdir="$TERRAFORM_DIR" output -raw app_url 2>/dev/null)
+# Query the ALB directly via AWS CLI — no terraform wrapper issues
+ALB_DNS=$(aws elbv2 describe-load-balancers \
+  --names opsticket-alb \
+  --query 'LoadBalancers[0].DNSName' \
+  --output text 2>/dev/null || echo "")
 
-if [[ -z "$APP_URL" ]]; then
-  echo "❌ Could not retrieve URL. Make sure you have run 'terraform apply' at least once."
-  echo "   Run: cd terraform && terraform output app_url"
+if [[ -z "$ALB_DNS" || "$ALB_DNS" == "None" ]]; then
+  echo "❌ ALB 'opsticket-alb' not found."
+  echo "   Make sure you have run 'terraform apply' at least once."
+  echo "   Hint: cd terraform && terraform apply -auto-approve"
   exit 1
 fi
 
-echo "┌─────────────────────────────────────────────────────────┐"
-echo "│  🚀 OpsTicket is live!                                  │"
-echo "│                                                         │"
-printf  "│  %-55s │\n" "  App URL  : $APP_URL"
-printf  "│  %-55s │\n" "  API URL  : $APP_URL/api"
-printf  "│  %-55s │\n" "  Health   : $APP_URL/api/health"
-echo "└─────────────────────────────────────────────────────────┘"
+APP_URL="http://$ALB_DNS"
+
+echo "┌─────────────────────────────────────────────────────────────┐"
+echo "│  🚀 OpsTicket is live!                                      │"
+echo "│                                                             │"
+printf  "│  App URL  : %-47s │\n" "$APP_URL"
+printf  "│  API URL  : %-47s │\n" "$APP_URL/api"
+printf  "│  Health   : %-47s │\n" "$APP_URL/api/health"
+echo "└─────────────────────────────────────────────────────────────┘"
 echo ""
 
 # Copy URL to clipboard if xclip/pbcopy is available
 if command -v xclip &>/dev/null; then
   echo "$APP_URL" | xclip -selection clipboard
-  echo "📋 URL copied to clipboard (xclip)"
+  echo "📋 URL copied to clipboard"
 elif command -v pbcopy &>/dev/null; then
   echo "$APP_URL" | pbcopy
-  echo "📋 URL copied to clipboard (pbcopy)"
+  echo "📋 URL copied to clipboard"
 fi
 
 # Open in browser if --open flag is passed
