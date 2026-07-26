@@ -1,7 +1,23 @@
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["69a50c52aa35da901050c59a09ec8b6d57528363"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
+
+  # ── Thumbprint note — READ BEFORE CHANGING ──────────────────────────────
+  # As of October 2023, AWS validates GitHub Actions OIDC tokens using its
+  # own trusted CA library (the same trust store used by ACM). The values
+  # below are effectively IGNORED by AWS for token.actions.githubusercontent.com.
+  #
+  # The field cannot be empty (AWS API requirement), so we keep known-good
+  # values here as placeholders. You do NOT need to update these if GitHub
+  # rotates their TLS certificate — AWS handles that natively now.
+  #
+  # Real security comes from the trust policy conditions in the IAM role
+  # below (aud + sub claims), NOT from this thumbprint.
+  # ────────────────────────────────────────────────────────────────────────
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1",
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd",
+  ]
 }
 
 resource "aws_iam_role" "github_actions_role" {
