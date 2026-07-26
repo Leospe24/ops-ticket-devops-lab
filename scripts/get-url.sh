@@ -44,8 +44,10 @@ if command -v terraform &>/dev/null && [[ -d "$TERRAFORM_DIR/.terraform" ]]; the
 fi
 
 # Strategy 2: AWS CLI (works in CI / when a local AWS profile is configured)
+# Region must be explicit — profile may not have a default region set.
 if [[ -z "$APP_URL" ]] && command -v aws &>/dev/null; then
   ALB_DNS=$(aws elbv2 describe-load-balancers \
+    --region us-east-1 \
     --names opsticket-alb \
     --query 'LoadBalancers[0].DNSName' \
     --output text 2>/dev/null || echo "")
