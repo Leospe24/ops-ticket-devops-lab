@@ -8,9 +8,10 @@
 #   ./scripts/get-url.sh --set <url>  → manually save a URL to local cache
 #
 # URL resolution order:
-#   1. AWS CLI query (if credentials are available)
-#   2. Cached URL from .opsticket-url (set by --set or a previous AWS fetch)
-#   3. Friendly error with instructions
+#   1. terraform output (works locally — no AWS creds needed)
+#   2. AWS CLI query    (works in CI or with local AWS profile)
+#   3. Cached .opsticket-url file
+#   4. Friendly error with --set instructions
 # =============================================================================
 
 set -euo pipefail
@@ -30,18 +31,27 @@ echo "🔍 Fetching live app URL..."
 echo ""
 
 APP_URL=""
+TERRAFORM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/terraform"
 
-# Strategy 1: Query AWS CLI directly (works in CI and when local creds are set)
-if command -v aws &>/dev/null; then
+# Strategy 1: terraform output — works locally without any AWS credentials
+# since state is already stored in S3 and init was already run.
+if command -v terraform &>/dev/null && [[ -d "$TERRAFORM_DIR/.terraform" ]]; then
+  TF_OUT=$(terraform -chdir="$TERRAFORM_DIR" output -raw app_url 2>/dev/null || echo "")
+  if [[ -n "$TF_OUT" && "$TF_OUT" != *"No outputs found"* ]]; then
+    APP_URL="$TF_OUT"
+    echo "$APP_URL" > "$CACHE_FILE"   # refresh cache
+  fi
+fi
+
+# Strategy 2: AWS CLI (works in CI / when a local AWS profile is configured)
+if [[ -z "$APP_URL" ]] && command -v aws &>/dev/null; then
   ALB_DNS=$(aws elbv2 describe-load-balancers \
     --names opsticket-alb \
     --query 'LoadBalancers[0].DNSName' \
     --output text 2>/dev/null || echo "")
-
   if [[ -n "$ALB_DNS" && "$ALB_DNS" != "None" ]]; then
     APP_URL="http://$ALB_DNS"
-    # Cache it for future offline use
-    echo "$APP_URL" > "$CACHE_FILE"
+    echo "$APP_URL" > "$CACHE_FILE"   # refresh cache
   fi
 fi
 

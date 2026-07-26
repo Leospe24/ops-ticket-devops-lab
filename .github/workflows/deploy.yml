@@ -114,6 +114,23 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./frontend
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
+      # Force ECS to pull the new :latest images and do a rolling restart
+      # Without this, ECS keeps the old container running even after ECR is updated
+      - name: Force ECS Redeployment
+        run: |
+          echo "🔄 Forcing ECS services to redeploy with new images..."
+          aws ecs update-service \
+            --cluster opsticket-ecs-cluster \
+            --service opsticket-backend-service \
+            --force-new-deployment \
+            --no-cli-pager
+          aws ecs update-service \
+            --cluster opsticket-ecs-cluster \
+            --service opsticket-frontend-service \
+            --force-new-deployment \
+            --no-cli-pager
+          echo "✅ Rolling restart triggered for both services."
+
       # Print a deployment summary with the live URL in the Actions run log
       - name: "🚀 Deployment Summary"
         run: |
