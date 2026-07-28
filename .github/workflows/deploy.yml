@@ -1,28 +1,30 @@
 name: "OpsTicket Platform - Provision & Build"
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       action:
-        description: "Choose action: plan or apply"
+        description: "Choose action"
         required: true
         default: "plan"
         type: choice
         options:
-          - plan
-          - apply
+          - plan          # Terraform plan only — no infra changes, no image builds
+          - apply         # Terraform apply + build & push images + ECS redeploy
+          - build-only    # Skip terraform — just build & push images + ECS redeploy
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  # ─────────────────────────────────────────────────────────────
+  # JOB 1 — Terraform (skipped for build-only)
+  # ─────────────────────────────────────────────────────────────
   terraform:
     name: "Infrastructure Automation"
     runs-on: ubuntu-latest
+    if: ${{ inputs.action != 'build-only' }}
     defaults:
       run:
         working-directory: ./terraform
@@ -49,16 +51,17 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan
-        if: ${{ github.event_name == 'push' || inputs.action == 'plan' }}
+        if: ${{ inputs.action == 'plan' }}
         run: terraform plan -no-color
 
       - name: Terraform Apply
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'apply' }}
+        if: ${{ inputs.action == 'apply' }}
         run: terraform apply -auto-approve
 
       # Query the ALB DNS directly via AWS CLI — avoids terraform wrapper exit-code noise
       - name: Capture App URL
         id: tf_output
+        if: ${{ inputs.action == 'apply' }}
         run: |
           ALB_DNS=$(aws elbv2 describe-load-balancers \
             --names opsticket-alb \
@@ -72,11 +75,18 @@ jobs:
           echo "app_url=$APP_URL" >> $GITHUB_OUTPUT
           echo "🌐 Live URL: $APP_URL"
 
+  # ─────────────────────────────────────────────────────────────
+  # JOB 2 — Build & Push Docker Images (apply or build-only)
+  # ─────────────────────────────────────────────────────────────
   docker:
     name: "App Image Build & Push"
-    needs: terraform # Only runs after Terraform completes successfully!
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'apply') }}
     runs-on: ubuntu-latest
+    # Runs after terraform when action=apply; runs standalone when action=build-only
+    needs: [terraform]
+    if: |
+      always() &&
+      (inputs.action == 'apply' || inputs.action == 'build-only') &&
+      (needs.terraform.result == 'success' || needs.terraform.result == 'skipped')
 
     steps:
       - name: Checkout Repository

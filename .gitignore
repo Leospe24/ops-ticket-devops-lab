@@ -65,3 +65,6 @@ docs/
 
 # direnv — local environment variables (machine-specific, never commit)
 .envrc
+
+# Demo video — kept locally but never pushed to GitHub (use Loom link instead)
+opsticket-demo-video.mp4

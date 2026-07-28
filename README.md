@@ -10,7 +10,7 @@ OpsTicket is a full-stack IT support ticket application I built to put my DevOps
 
 It is a working 3-tier application (React, Node.js, PostgreSQL) that handles user authentication and ticket management.
 
-> 🎬 **Watch the 2-Minute Demo Video:** [opsticket-demo-video.mp4](./opsticket-demo-video.mp4)
+> 🎬 **Watch the 2-Minute Demo:** [Loom Demo Video](https://www.loom.com/share/a1a0fbe810c44eac880fb5b3b4b4d8ef)
 
 ## System Architecture
 
