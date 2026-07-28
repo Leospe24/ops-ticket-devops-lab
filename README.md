@@ -1,161 +1,92 @@
-# OpsTicket DevOps Project
+# OpsTicket — DevOps Portfolio Project
 
 [![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue)](https://github.com)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ed)](https://www.docker.com/)
 [![AWS](https://img.shields.io/badge/AWS-Terraform%2FECS-orange)](https://aws.amazon.com/)
 
-## 🎥 Project Demo Video
+## Overview
 
-> 🎬 **Watch the 3-Minute OpsTicket Demo Video**: [Link to Video Demo](YOUR_VIDEO_URL_HERE)
+OpsTicket is a full-stack IT support ticket application I built to put my DevOps knowledge into practice. Instead of just writing code, I wanted to see what it takes to containerize an app, write CI/CD pipelines, and deploy it to AWS using Infrastructure as Code.
 
-## What this project is
+It is a working 3-tier application (React, Node.js, PostgreSQL) that handles user authentication and ticket management.
 
-OpsTicket is a simple IT support ticket app. It is also a beginner-friendly DevOps project that shows how a web app can be built, tested, containerized, and deployed to the cloud.
-
-This project is good for learning because it touches many common DevOps topics without being too large. You can see how an application moves from local development into a cloud-style setup.
-
-## Why this project matters for DevOps
-
-This repo is a good learning project because it includes:
-
-- a web app with a frontend and backend,
-- a database for storing data,
-- Docker for running services locally,
-- GitHub Actions for automation,
-- Terraform for creating cloud infrastructure,
-- AWS services such as ECS, RDS, and a load balancer,
-- basic backup and monitoring practices.
-
-If you are new to DevOps, this project helps you understand the big picture before you go deeper into advanced tools.
-
-## Main parts of the project
-
-### 1. Application
-
-- Frontend: React + Vite
-- Backend: Node.js + Express
-- Database: PostgreSQL
-- Authentication: JWT and password hashing
-
-### 2. Containers and local development
-
-- Docker Compose is used to run the app locally.
-- This helps you test the app in a setup that looks closer to production.
-
-### 3. Cloud and infrastructure
-
-- Terraform is used to define AWS resources.
-- The project includes networking, a database, container services, and monitoring.
-- This is a simple example of infrastructure as code.
-
-### 4. Automation
-
-- GitHub Actions runs CI checks.
-- The workflow also helps build and deploy application images.
-
-## How the app works
-
-A user can:
-
-- log in or register,
-- view tickets,
-- create new tickets,
-- see ticket statistics.
-
-The backend handles authentication and ticket logic. The frontend shows the data to the user. The database stores the information.
-
-## Local setup
-
-To run the project locally:
-
-```bash
-git clone <repo-url>
-cd ops-ticket-devops-infrastructure
-cp .env.example .env
-docker compose up --build
-```
-
-After that:
-
-- the frontend should be available in the browser,
-- the backend API will be running,
-- PostgreSQL will be available for local testing.
-
-## Testing
-
-Backend tests:
-
-```bash
-cd backend && npm test
-```
-
-Frontend tests:
-
-```bash
-cd frontend && npm test
-```
-
-## DevOps topics covered
-
-This project is a good beginner example for learning:
-
-- Docker and containers
-- Environment variables and secrets
-- CI/CD with GitHub Actions
-- Infrastructure as Code with Terraform
-- AWS basics such as ECS, RDS, and networking
-- Monitoring and alerts
-- Backup and recovery basics
-
-## Project structure
-
-```text
-backend/         - Node.js API and database access
-frontend/        - React app for the user interface
-terraform/       - AWS infrastructure defined with Terraform
-terraform-bootstrap/ - bootstrap resources for Terraform state
-.github/workflows/ - CI/CD automation
-scripts/         - helper scripts such as database backup
-docker-compose.yml - local container setup
-```
+> 🎬 **Watch the 2-Minute Demo Video:** [opsticket-demo-video.mp4](./opsticket-demo-video.mp4)
 
 ## System Architecture
 
+I designed the infrastructure to mimic a real-world AWS deployment, keeping security and isolation in mind.
+
 <p align="center">
-  <img src="opsticket-architecture.png" alt="OpsTicket Architecture Diagram" width="850"/>
+  <img src="./opsticket-architecture.png" alt="OpsTicket Architecture Diagram" width="850"/>
 </p>
 
-The application architecture is structured as follows:
+**How it works under the hood:**
+- **Traffic Routing:** An Application Load Balancer (ALB) in public subnets takes incoming web traffic and routes it to either the frontend or backend based on the URL path.
+- **Compute:** The React frontend and Node API run as Docker containers on AWS ECS (Fargate) in private subnets.
+- **Database:** PostgreSQL runs on Amazon RDS, also in a private subnet. Only the ECS containers are allowed to talk to it via Security Groups.
+- **Secrets:** Passwords and tokens are kept out of the codebase and injected at runtime using AWS SSM Parameter Store.
 
-- **Frontend & Backend**: React SPA communicates with Node.js / Express REST API over HTTP/JSON.
-- **Database Layer**: PostgreSQL handles persistent data storage with isolated migrations and seeds.
-- **Cloud Infrastructure (AWS & Terraform)**:
-  - **Multi-AZ VPC**: Public subnets (ALB), Private App subnets (ECS Fargate), and Private Data subnets (RDS).
-  - **Application Load Balancer (ALB)**: Public entry point with path-based routing (`/api/*` $\rightarrow$ Backend port 3000, default $\rightarrow$ Frontend port 80).
-  - **Amazon RDS PostgreSQL**: Private database instance with security group isolation allowing access only from ECS tasks.
-- **CI/CD & Security**: GitHub Actions pipeline uses AWS OIDC role assumption (passwordless) for automated testing, DB backup verification, and deployment. Runtime secrets are managed via AWS SSM Parameter Store.
+## Tech Stack
 
-## What a beginner can learn from this project
+- **Cloud & Infrastructure:** AWS (VPC, ALB, ECS Fargate, RDS), Terraform
+- **CI/CD:** GitHub Actions
+- **Containers:** Docker, Docker Compose, Amazon ECR
+- **Frontend:** React, Vite, Nginx
+- **Backend & DB:** Node.js, Express, PostgreSQL, Knex.js
 
-This project is useful if you want to practice:
+## The DevOps Highlights (What I Learned)
 
-- how apps are packaged with Docker,
-- how CI pipelines work,
-- how infrastructure can be created with code,
-- how cloud services connect together,
-- how to think about security and secrets,
-- how to explain a project in interviews.
+Here are the main DevOps practices I implemented in this project:
 
-## Next steps
+- **Infrastructure as Code (IaC):** Instead of clicking around the AWS console, I wrote Terraform scripts to build the VPC, networking, databases, and container services. This makes the environment reproducible and easy to destroy.
+- **Automated CI/CD Pipelines:** I wrote GitHub Actions workflows (`.github/workflows/`) that trigger automatically. They run tests, build Docker images, push them to AWS ECR, and update the ECS services without downtime.
+- **Passwordless AWS Auth:** Instead of storing long-lived AWS access keys in GitHub (which is a security risk), I configured GitHub OIDC. The CI/CD pipeline securely assumes an AWS IAM role for deployments.
+- **Monitoring & Alerting:** I implemented monitoring to track application health and integrated email alerts to automatically notify me when issues are detected.
+- **Dev/Prod Parity:** I used Docker Compose for local development so that running the app on my laptop closely matches how it runs in the cloud.
+- **Database Management:** Using Knex.js, the database schema updates automatically when the containers start up. I also wrote a simple backup script (`scripts/backup-db.sh`) to automate data snapshots.
 
-If you want to continue learning, the next steps could be:
+## Running It Locally
 
-- add better monitoring and logs,
-- improve deployment automation,
-- add more AWS security practices,
-- learn how to manage secrets in a more production-ready way,
-- explore container orchestration beyond this basic setup.
+If you want to spin this up on your own machine:
 
-## Summary
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/Leospe24/ops-ticket-devops-lab.git
+   cd ops-ticket-devops-lab
+   ```
+2. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # You can leave the default values for local testing
+   ```
+3. Boot up the containers:
+   ```bash
+   docker compose up --build
+   ```
 
-OpsTicket is not just a ticket app. It is also a simple DevOps learning project that shows how application code, infrastructure, and automation can work together.
+The frontend will be available at `http://localhost`, the backend API at `http://localhost:3000`, and PostgreSQL is ready for connections.
+
+## Deploying to AWS
+
+If you want to deploy this to your own AWS account, you'll need Terraform installed and AWS credentials configured.
+
+1. Navigate to the Terraform bootstrap directory to set up the remote state:
+   ```bash
+   cd terraform-bootstrap
+   terraform init
+   terraform apply
+   ```
+2. Once the state bucket is created, provision the main infrastructure:
+   ```bash
+   cd ../terraform
+   terraform init
+   # Review the plan before applying
+   terraform apply
+   ```
+
+*(Note: You will need to update the Terraform backend blocks with your own S3 bucket name and configure GitHub Actions variables/secrets with your repository details for the CI/CD pipeline to work).*
+
+## What's Next?
+
+If I continue expanding this project, I plan to:
+- Add an infrastructure scanning tool like Checkov or tfsec to automatically validate the Terraform code for security best practices.
